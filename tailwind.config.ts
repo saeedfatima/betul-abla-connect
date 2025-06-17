@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,26 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// NGO theme colors
+				'ngo-primary': {
+					50: '#f0f9ff',
+					100: '#e0f2fe',
+					500: '#0ea5e9',
+					600: '#0284c7',
+					700: '#0369a1',
+				},
+				'ngo-secondary': {
+					50: '#fef3c7',
+					100: '#fde68a',
+					500: '#f59e0b',
+					600: '#d97706',
+				},
+				'ngo-accent': {
+					50: '#ecfdf5',
+					100: '#d1fae5',
+					500: '#10b981',
+					600: '#059669',
 				}
 			},
 			borderRadius: {
@@ -84,11 +105,22 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					'100%': {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out'
 			}
 		}
 	},
