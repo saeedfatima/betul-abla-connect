@@ -1,168 +1,393 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '../../components/DashboardLayout';
+import { Link } from 'react-router-dom';
+
+interface SystemStats {
+  totalOrphans: number;
+  activeOrphans: number;
+  pendingOrphans: number;
+  totalBoreholes: number;
+  completedBoreholes: number;
+  activeProjects: number;
+  totalUsers: number;
+  activeUsers: number;
+  monthlyBudget: number;
+  totalBeneficiaries: number;
+  reportsGenerated: number;
+  lastReportDate: string;
+}
+
+interface RecentActivity {
+  id: string;
+  type: 'orphan' | 'borehole' | 'user' | 'report' | 'system';
+  description: string;
+  timestamp: string;
+  user: string;
+  status: string;
+}
 
 const AdminDashboard = () => {
-  const stats = [
-    { title: 'Total Orphans', value: '523', change: '+12 this month', icon: '👶' },
-    { title: 'Active Boreholes', value: '47', change: '+3 this month', icon: '💧' },
-    { title: 'System Users', value: '8', change: '2 coordinators, 6 staff', icon: '👥' },
-    { title: 'Monthly Budget', value: '€25,000', change: 'Current allocation', icon: '💰' },
-  ];
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const recentActivities = [
-    { activity: 'New orphan registered: Amina Hassan (Age 8)', time: '2 hours ago', type: 'orphan' },
-    { activity: 'Borehole BH-2024-15 completed in Kano', time: '1 day ago', type: 'borehole' },
-    { activity: 'Monthly allowance distributed to 120 orphans', time: '3 days ago', type: 'payment' },
-    { activity: 'New coordinator added: Ibrahim Mohammed', time: '1 week ago', type: 'user' },
-  ];
+  // Mock data - in real app, this would come from your Django backend
+  const [stats] = useState<SystemStats>({
+    totalOrphans: 568,
+    activeOrphans: 523,
+    pendingOrphans: 45,
+    totalBoreholes: 59,
+    completedBoreholes: 47,
+    activeProjects: 12,
+    totalUsers: 15,
+    activeUsers: 12,
+    monthlyBudget: 25000,
+    totalBeneficiaries: 10250,
+    reportsGenerated: 47,
+    lastReportDate: '2024-11-15'
+  });
+
+  const [recentActivities] = useState<RecentActivity[]>([
+    {
+      id: '1',
+      type: 'user',
+      description: 'New coordinator account created for Ibrahim Mohammed',
+      timestamp: '1 hour ago',
+      user: 'Admin',
+      status: 'completed'
+    },
+    {
+      id: '2',
+      type: 'orphan',
+      description: 'Batch approval of 15 orphan applications',
+      timestamp: '2 hours ago',
+      user: 'Fatima Coordinator',
+      status: 'completed'
+    },
+    {
+      id: '3',
+      type: 'borehole',
+      description: 'Borehole project BH-2024-004 status updated to completed',
+      timestamp: '4 hours ago',
+      user: 'Ali Coordinator',
+      status: 'completed'
+    },
+    {
+      id: '4',
+      type: 'report',
+      description: 'Monthly financial report generated and distributed',
+      timestamp: '1 day ago',
+      user: 'Admin',
+      status: 'generated'
+    },
+    {
+      id: '5',
+      type: 'system',
+      description: 'System backup completed successfully',
+      timestamp: '1 day ago',
+      user: 'System',
+      status: 'completed'
+    },
+    {
+      id: '6',
+      type: 'orphan',
+      description: 'Monthly allowance distributed to all active orphans',
+      timestamp: '2 days ago',
+      user: 'Aisha Coordinator',
+      status: 'completed'
+    }
+  ]);
+
+  const filteredActivities = recentActivities.filter(activity =>
+    activity.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    activity.user.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'orphan': return '👶';
+      case 'borehole': return '💧';
+      case 'user': return '👥';
+      case 'report': return '📊';
+      case 'system': return '⚙️';
+      default: return '📋';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'generated': return 'bg-blue-100 text-blue-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   const quickActions = [
-    { title: 'Add New Orphan', description: 'Register a new child in the orphan care program', link: '/admin/orphans', icon: '👶' },
-    { title: 'Create Borehole Project', description: 'Start a new borehole construction project', link: '/admin/boreholes', icon: '💧' },
-    { title: 'Generate Report', description: 'Create monthly or annual activity reports', link: '/admin/reports', icon: '📊' },
-    { title: 'Manage Users', description: 'Add or modify user accounts and permissions', link: '/admin/users', icon: '⚙️' },
+    {
+      title: 'Manage Orphans',
+      description: 'Add, edit, or review orphan records',
+      link: '/admin/orphans',
+      icon: '👶',
+      color: 'bg-blue-500',
+      count: stats.pendingOrphans
+    },
+    {
+      title: 'Manage Boreholes',
+      description: 'Oversee borehole projects',
+      link: '/admin/boreholes',
+      icon: '💧',
+      color: 'bg-green-500',
+      count: stats.activeProjects
+    },
+    {
+      title: 'User Management',
+      description: 'Manage coordinator and staff accounts',
+      link: '/admin/users',
+      icon: '👥',
+      color: 'bg-purple-500',
+      count: stats.totalUsers
+    },
+    {
+      title: 'Reports & Analytics',
+      description: 'Generate and view system reports',
+      link: '/admin/reports',
+      icon: '📊',
+      color: 'bg-orange-500',
+      count: stats.reportsGenerated
+    }
   ];
 
   return (
     <DashboardLayout title="Admin Dashboard" userRole="admin">
       <div className="space-y-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">{stat.title}</CardTitle>
-                <span className="text-2xl">{stat.icon}</span>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-ngo-primary-700">{stat.value}</div>
-                <p className="text-xs text-gray-500">{stat.change}</p>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Welcome Section */}
+        <div className="bg-gradient-to-r from-ngo-primary-500 to-ngo-primary-600 rounded-lg p-6 text-white">
+          <h2 className="text-2xl font-bold mb-2">Admin Control Center</h2>
+          <p className="text-ngo-primary-100">
+            Comprehensive oversight of all foundation activities. Manage users, approve operations, and monitor system performance.
+          </p>
         </div>
 
+        {/* System Overview Stats */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">System Overview</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-blue-600">{stats.totalOrphans}</div>
+                <div className="text-sm text-gray-600">Total Orphans</div>
+                <div className="text-xs text-green-600">+{stats.activeOrphans} active</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-yellow-600">{stats.pendingOrphans}</div>
+                <div className="text-sm text-gray-600">Pending Review</div>
+                <div className="text-xs text-orange-600">Needs attention</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-green-600">{stats.totalBoreholes}</div>
+                <div className="text-sm text-gray-600">Total Boreholes</div>
+                <div className="text-xs text-green-600">+{stats.completedBoreholes} completed</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-purple-600">{stats.totalUsers}</div>
+                <div className="text-sm text-gray-600">System Users</div>
+                <div className="text-xs text-green-600">{stats.activeUsers} active</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-ngo-primary-600">€{stats.monthlyBudget.toLocaleString()}</div>
+                <div className="text-sm text-gray-600">Monthly Budget</div>
+                <div className="text-xs text-blue-600">Current allocation</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-orange-600">{stats.totalBeneficiaries.toLocaleString()}</div>
+                <div className="text-sm text-gray-600">Beneficiaries</div>
+                <div className="text-xs text-green-600">Lives impacted</div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Quick Actions with Management Features */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Administrative Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {quickActions.map((action) => (
+                <Link key={action.title} to={action.link}>
+                  <div className="border rounded-lg p-4 hover:bg-gray-50 transition-colors cursor-pointer">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className={`w-12 h-12 ${action.color} rounded-lg flex items-center justify-center text-white text-2xl`}>
+                        {action.icon}
+                      </div>
+                      {action.count > 0 && (
+                        <Badge className="bg-red-100 text-red-800">
+                          {action.count}
+                        </Badge>
+                      )}
+                    </div>
+                    <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
+                    <p className="text-sm text-gray-600">{action.description}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Detailed Management Sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Activities */}
+          {/* Orphan Management Overview */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg text-ngo-primary-700">Recent Activities</CardTitle>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <span>👶</span>
+                  Orphan Management
+                </span>
+                <Link to="/admin/orphans">
+                  <Button size="sm" variant="outline">Manage All</Button>
+                </Link>
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivities.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-ngo-primary-500 rounded-full mt-2"></div>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{stats.activeOrphans}</div>
+                  <div className="text-xs text-gray-600">Active Cases</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-yellow-600">{stats.pendingOrphans}</div>
+                  <div className="text-xs text-gray-600">Pending</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-green-600">{stats.totalOrphans}</div>
+                  <div className="text-xs text-gray-600">Total</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Link to="/admin/orphans">
+                    <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700">
+                      Add New
+                    </Button>
+                  </Link>
+                  <Link to="/admin/orphans">
+                    <Button size="sm" variant="outline" className="w-full">
+                      Review Pending
+                    </Button>
+                  </Link>
+                </div>
+                <Link to="/admin/reports">
+                  <Button size="sm" variant="outline" className="w-full">
+                    Generate Orphan Report
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Borehole Management Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <span>💧</span>
+                  Borehole Management
+                </span>
+                <Link to="/admin/boreholes">
+                  <Button size="sm" variant="outline">Manage All</Button>
+                </Link>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-green-600">{stats.completedBoreholes}</div>
+                  <div className="text-xs text-gray-600">Completed</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">{stats.activeProjects}</div>
+                  <div className="text-xs text-gray-600">Active</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">{stats.totalBoreholes}</div>
+                  <div className="text-xs text-gray-600">Total</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Link to="/admin/boreholes">
+                    <Button size="sm" className="w-full bg-green-600 hover:bg-green-700">
+                      New Project
+                    </Button>
+                  </Link>
+                  <Link to="/admin/boreholes">
+                    <Button size="sm" variant="outline" className="w-full">
+                      Update Status
+                    </Button>
+                  </Link>
+                </div>
+                <Link to="/admin/reports">
+                  <Button size="sm" variant="outline" className="w-full">
+                    Borehole Reports
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* System Activity Log */}
+        <Card>
+          <CardHeader>
+            <CardTitle>System Activity Log</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Input
+                placeholder="Search activities by description or user..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-md"
+              />
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {filteredActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                    <div className="text-2xl">{getActivityIcon(activity.type)}</div>
                     <div className="flex-1">
-                      <p className="text-sm text-gray-800">{activity.activity}</p>
-                      <p className="text-xs text-gray-500">{activity.time}</p>
+                      <div className="text-sm font-medium text-gray-900">{activity.description}</div>
+                      <div className="text-xs text-gray-500">
+                        by {activity.user} • {activity.timestamp}
+                      </div>
                     </div>
+                    <Badge className={getStatusColor(activity.status)}>
+                      {activity.status}
+                    </Badge>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg text-ngo-primary-700">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-3">
-                {quickActions.map((action, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="flex items-center justify-start h-auto p-4 text-left"
-                    asChild
-                  >
-                    <Link to={action.link}>
-                      <span className="text-xl mr-3">{action.icon}</span>
-                      <div>
-                        <div className="font-semibold text-gray-800">{action.title}</div>
-                        <div className="text-sm text-gray-600">{action.description}</div>
-                      </div>
-                    </Link>
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* System Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg text-ngo-primary-700">Orphan Care Status</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Active Cases</span>
-                  <span className="font-semibold">523</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Pending Verification</span>
-                  <span className="font-semibold text-yellow-600">12</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Monthly Allowances Due</span>
-                  <span className="font-semibold text-ngo-primary-600">€15,690</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg text-ngo-primary-700">Borehole Projects</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Completed</span>
-                  <span className="font-semibold text-green-600">47</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">In Progress</span>
-                  <span className="font-semibold text-blue-600">5</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Planned</span>
-                  <span className="font-semibold text-gray-600">8</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg text-ngo-primary-700">System Health</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">System Status</span>
-                  <span className="font-semibold text-green-600">Online</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Database Sync</span>
-                  <span className="font-semibold text-green-600">Active</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Last Backup</span>
-                  <span className="font-semibold">2 hours ago</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

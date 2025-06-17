@@ -44,12 +44,12 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/admin/orphans" element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['admin', 'coordinator']}>
                 <OrphanManagement />
               </ProtectedRoute>
             } />
             <Route path="/admin/boreholes" element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['admin', 'coordinator']}>
                 <BoreholeManagement />
               </ProtectedRoute>
             } />
@@ -59,7 +59,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/admin/reports" element={
-              <ProtectedRoute allowedRoles={['admin']}>
+              <ProtectedRoute allowedRoles={['admin', 'coordinator']}>
                 <Reports />
               </ProtectedRoute>
             } />
@@ -72,7 +72,7 @@ const App = () => (
             } />
             
             {/* Protected Staff Routes */}
-            <Route path="/staff-dashboard" element={
+            <Route path="/staff" element={
               <ProtectedRoute allowedRoles={['admin', 'coordinator', 'staff']}>
                 <StaffDashboard />
               </ProtectedRoute>
