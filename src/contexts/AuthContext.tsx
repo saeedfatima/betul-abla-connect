@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { authAPI, setTokens, clearTokens, getAuthToken } from '../services/api';
 
 interface User {
   id: string;
@@ -19,63 +20,83 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demo purposes
-const mockUsers: User[] = [
-  {
-    id: '1',
-    username: 'admin',
-    role: 'admin',
-    email: 'admin@betulabla.org',
-    fullName: 'Administrator',
-    isActive: true
-  },
-  {
-    id: '2',
-    username: 'coordinator',
-    role: 'coordinator',
-    email: 'coordinator@betulabla.org',
-    fullName: 'Field Coordinator',
-    isActive: true
-  },
-  {
-    id: '3',
-    username: 'staff',
-    role: 'staff',
-    email: 'staff@betulabla.org',
-    fullName: 'Staff Member',
-    isActive: true
-  }
-];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user session
-    const storedUser = localStorage.getItem('betul_abla_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Check for stored user session and validate token
+    const checkAuthState = async () => {
+      const token = getAuthToken();
+      const storedUser = localStorage.getItem('betul_abla_user');
+      
+      if (token && storedUser) {
+        try {
+          const response = await authAPI.getProfile();
+          if (response.ok) {
+            const userData = await response.json();
+            const user: User = {
+              id: userData.id,
+              username: userData.username,
+              role: userData.role,
+              email: userData.email,
+              fullName: userData.full_name,
+              isActive: userData.is_active
+            };
+            setUser(user);
+            localStorage.setItem('betul_abla_user', JSON.stringify(user));
+          } else {
+            // Token is invalid, clear storage
+            clearTokens();
+          }
+        } catch (error) {
+          console.error('Error validating token:', error);
+          clearTokens();
+        }
+      }
+      setIsLoading(false);
+    };
+
+    checkAuthState();
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    // Mock authentication - in real app, this would call your Django backend
-    const foundUser = mockUsers.find(u => u.username === username && u.isActive);
-    
-    if (foundUser && password === 'password123') { // Mock password check
-      setUser(foundUser);
-      localStorage.setItem('betul_abla_user', JSON.stringify(foundUser));
-      return true;
+    try {
+      const response = await authAPI.login(username, password);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setTokens(data.access, data.refresh);
+        
+        // Get user profile
+        const profileResponse = await authAPI.getProfile();
+        if (profileResponse.ok) {
+          const userData = await profileResponse.json();
+          const user: User = {
+            id: userData.id,
+            username: userData.username,
+            role: userData.role,
+            email: userData.email,
+            fullName: userData.full_name,
+            isActive: userData.is_active
+          };
+          
+          setUser(user);
+          localStorage.setItem('betul_abla_user', JSON.stringify(user));
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-    
-    return false;
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('betul_abla_user');
+    clearTokens();
   };
 
   return (

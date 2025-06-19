@@ -4,128 +4,50 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
 import { Trash2, Edit, Eye } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 import AddOrphanForm from '../../components/AddOrphanForm';
 import EditOrphanForm from '../../components/EditOrphanForm';
-
-interface Orphan {
-  id: string;
-  name: string;
-  age: number;
-  gender: 'Male' | 'Female';
-  location: string;
-  guardianName: string;
-  monthlyAllowance: number;
-  status: 'Active' | 'Pending' | 'Inactive';
-  registrationDate: string;
-  lastPayment: string;
-  schoolStatus: string;
-  healthStatus: string;
-}
+import { useOrphans } from '../../hooks/useOrphans';
 
 const OrphanManagement = () => {
-  const { toast } = useToast();
+  const { orphans, loading, addOrphan, updateOrphan, deleteOrphan } = useOrphans();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [selectedOrphan, setSelectedOrphan] = useState<Orphan | null>(null);
-  const [editingOrphan, setEditingOrphan] = useState<Orphan | null>(null);
-  
-  // Mock data - in real app, this would come from your Django backend
-  const [orphans, setOrphans] = useState<Orphan[]>([
-    {
-      id: '1',
-      name: 'Amina Hassan',
-      age: 8,
-      gender: 'Female',
-      location: 'Kano State',
-      guardianName: 'Fatima Hassan',
-      monthlyAllowance: 30,
-      status: 'Active',
-      registrationDate: '2024-01-15',
-      lastPayment: '2024-11-01',
-      schoolStatus: 'Enrolled - Primary 3',
-      healthStatus: 'Good'
-    },
-    {
-      id: '2',
-      name: 'Ibrahim Mohammed',
-      age: 12,
-      gender: 'Male',
-      location: 'Jigawa State',
-      guardianName: 'Aisha Mohammed',
-      monthlyAllowance: 35,
-      status: 'Active',
-      registrationDate: '2024-02-20',
-      lastPayment: '2024-11-01',
-      schoolStatus: 'Enrolled - Primary 6',
-      healthStatus: 'Good'
-    },
-    {
-      id: '3',
-      name: 'Zainab Usman',
-      age: 6,
-      gender: 'Female',
-      location: 'Kano State',
-      guardianName: 'Maryam Usman',
-      monthlyAllowance: 30,
-      status: 'Pending',
-      registrationDate: '2024-11-10',
-      lastPayment: 'N/A',
-      schoolStatus: 'Not enrolled',
-      healthStatus: 'Pending medical checkup'
-    }
-  ]);
+  const [selectedOrphan, setSelectedOrphan] = useState<any>(null);
+  const [editingOrphan, setEditingOrphan] = useState<any>(null);
 
   const filteredOrphans = orphans.filter(orphan =>
     orphan.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     orphan.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    orphan.guardianName.toLowerCase().includes(searchTerm.toLowerCase())
+    orphan.guardian_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddOrphan = (orphanData: any) => {
-    setOrphans([...orphans, orphanData]);
-    setShowAddForm(false);
-    toast({
-      title: "Orphan Added",
-      description: `${orphanData.name} has been successfully registered.`,
-    });
-  };
-
-  const handleEditOrphan = (orphanData: any) => {
-    setOrphans(orphans.map(orphan => 
-      orphan.id === orphanData.id ? orphanData : orphan
-    ));
-    setShowEditForm(false);
-    setEditingOrphan(null);
-    toast({
-      title: "Orphan Updated",
-      description: `${orphanData.name} has been successfully updated.`,
-    });
-  };
-
-  const handleDeleteOrphan = (orphanId: string) => {
-    const orphanToDelete = orphans.find(o => o.id === orphanId);
-    if (window.confirm(`Are you sure you want to delete ${orphanToDelete?.name}? This action cannot be undone.`)) {
-      setOrphans(orphans.filter(orphan => orphan.id !== orphanId));
-      toast({
-        title: "Orphan Deleted",
-        description: `${orphanToDelete?.name} has been removed from the system.`,
-        variant: "destructive"
-      });
+  const handleAddOrphan = async (orphanData: any) => {
+    const success = await addOrphan(orphanData);
+    if (success) {
+      setShowAddForm(false);
     }
   };
 
-  const updateOrphanStatus = (id: string, status: 'Active' | 'Pending' | 'Inactive') => {
-    setOrphans(orphans.map(orphan =>
-      orphan.id === id ? { ...orphan, status } : orphan
-    ));
-    toast({
-      title: "Status Updated",
-      description: "Orphan status has been updated successfully.",
-    });
+  const handleEditOrphan = async (orphanData: any) => {
+    const success = await updateOrphan(orphanData.id, orphanData);
+    if (success) {
+      setShowEditForm(false);
+      setEditingOrphan(null);
+    }
+  };
+
+  const handleDeleteOrphan = async (orphanId: string) => {
+    const orphanToDelete = orphans.find(o => o.id === orphanId);
+    if (window.confirm(`Are you sure you want to delete ${orphanToDelete?.name}? This action cannot be undone.`)) {
+      await deleteOrphan(orphanId);
+    }
+  };
+
+  const updateOrphanStatus = async (id: string, status: 'Active' | 'Pending' | 'Inactive') => {
+    await updateOrphan(id, { status });
   };
 
   const getStatusColor = (status: string) => {
@@ -136,6 +58,16 @@ const OrphanManagement = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Orphan Management" userRole="admin">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-ngo-primary-500"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Orphan Management" userRole="admin">
@@ -187,7 +119,7 @@ const OrphanManagement = () => {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-ngo-primary-600">
-                €{orphans.filter(o => o.status === 'Active').reduce((sum, o) => sum + o.monthlyAllowance, 0)}
+                €{orphans.filter(o => o.status === 'Active').reduce((sum, o) => sum + o.monthly_allowance, 0)}
               </div>
               <div className="text-sm text-gray-600">Monthly Budget</div>
             </CardContent>
@@ -242,12 +174,12 @@ const OrphanManagement = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 text-sm text-gray-600">
                         <div>Age: {orphan.age} years ({orphan.gender})</div>
                         <div>Location: {orphan.location}</div>
-                        <div>Guardian: {orphan.guardianName}</div>
-                        <div>Allowance: €{orphan.monthlyAllowance}/month</div>
-                        <div>School: {orphan.schoolStatus}</div>
-                        <div>Health: {orphan.healthStatus}</div>
-                        <div>Registered: {orphan.registrationDate}</div>
-                        <div>Last Payment: {orphan.lastPayment}</div>
+                        <div>Guardian: {orphan.guardian_name}</div>
+                        <div>Allowance: €{orphan.monthly_allowance}/month</div>
+                        <div>School: {orphan.school_status}</div>
+                        <div>Health: {orphan.health_status}</div>
+                        <div>Registered: {orphan.registration_date}</div>
+                        <div>Last Payment: {orphan.last_payment || 'N/A'}</div>
                       </div>
                     </div>
                     <div className="flex gap-2 flex-wrap">
@@ -318,15 +250,15 @@ const OrphanManagement = () => {
                   <div><strong>Age:</strong> {selectedOrphan.age} years</div>
                   <div><strong>Gender:</strong> {selectedOrphan.gender}</div>
                   <div><strong>Location:</strong> {selectedOrphan.location}</div>
-                  <div><strong>Guardian:</strong> {selectedOrphan.guardianName}</div>
+                  <div><strong>Guardian:</strong> {selectedOrphan.guardian_name}</div>
                 </div>
                 <div className="space-y-2">
-                  <div><strong>Monthly Allowance:</strong> €{selectedOrphan.monthlyAllowance}</div>
+                  <div><strong>Monthly Allowance:</strong> €{selectedOrphan.monthly_allowance}</div>
                   <div><strong>Status:</strong> <Badge className={getStatusColor(selectedOrphan.status)}>{selectedOrphan.status}</Badge></div>
-                  <div><strong>Registration Date:</strong> {selectedOrphan.registrationDate}</div>
-                  <div><strong>Last Payment:</strong> {selectedOrphan.lastPayment}</div>
-                  <div><strong>School Status:</strong> {selectedOrphan.schoolStatus}</div>
-                  <div><strong>Health Status:</strong> {selectedOrphan.healthStatus}</div>
+                  <div><strong>Registration Date:</strong> {selectedOrphan.registration_date}</div>
+                  <div><strong>Last Payment:</strong> {selectedOrphan.last_payment || 'N/A'}</div>
+                  <div><strong>School Status:</strong> {selectedOrphan.school_status}</div>
+                  <div><strong>Health Status:</strong> {selectedOrphan.health_status}</div>
                 </div>
               </div>
               <div className="mt-6 flex gap-2">
