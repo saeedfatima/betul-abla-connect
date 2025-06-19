@@ -1,11 +1,14 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Trash2, Edit, Eye } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 import AddBoreholeForm from '../../components/AddBoreholeForm';
+import EditBoreholeForm from '../../components/EditBoreholeForm';
 
 interface Borehole {
   id: string;
@@ -28,7 +31,9 @@ const BoreholeManagement = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [selectedBorehole, setSelectedBorehole] = useState<Borehole | null>(null);
+  const [editingBorehole, setEditingBorehole] = useState<Borehole | null>(null);
   
   // Mock data - in real app, this would come from your Django backend
   const [boreholes, setBoreholes] = useState<Borehole[]>([
@@ -82,18 +87,6 @@ const BoreholeManagement = () => {
     }
   ]);
 
-  const [newBorehole, setNewBorehole] = useState({
-    projectCode: '',
-    location: '',
-    community: '',
-    depth: '',
-    contractor: '',
-    cost: '',
-    beneficiaries: '',
-    coordinates: '',
-    notes: ''
-  });
-
   const filteredBoreholes = boreholes.filter(borehole =>
     borehole.projectCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
     borehole.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,6 +100,30 @@ const BoreholeManagement = () => {
       title: "Borehole Project Added",
       description: `Project ${boreholeData.projectCode} has been successfully created.`,
     });
+  };
+
+  const handleEditBorehole = (boreholeData: any) => {
+    setBoreholes(boreholes.map(borehole => 
+      borehole.id === boreholeData.id ? boreholeData : borehole
+    ));
+    setShowEditForm(false);
+    setEditingBorehole(null);
+    toast({
+      title: "Borehole Updated",
+      description: `Project ${boreholeData.projectCode} has been successfully updated.`,
+    });
+  };
+
+  const handleDeleteBorehole = (boreholeId: string) => {
+    const boreholeToDelete = boreholes.find(b => b.id === boreholeId);
+    if (window.confirm(`Are you sure you want to delete project ${boreholeToDelete?.projectCode}? This action cannot be undone.`)) {
+      setBoreholes(boreholes.filter(borehole => borehole.id !== boreholeId));
+      toast({
+        title: "Borehole Deleted",
+        description: `Project ${boreholeToDelete?.projectCode} has been removed from the system.`,
+        variant: "destructive"
+      });
+    }
   };
 
   const updateBoreholeStatus = (id: string, status: Borehole['status']) => {
@@ -221,6 +238,18 @@ const BoreholeManagement = () => {
           />
         )}
 
+        {/* Edit Borehole Form */}
+        {showEditForm && editingBorehole && (
+          <EditBoreholeForm 
+            borehole={editingBorehole}
+            onSubmit={handleEditBorehole}
+            onCancel={() => {
+              setShowEditForm(false);
+              setEditingBorehole(null);
+            }}
+          />
+        )}
+
         {/* Borehole List */}
         <Card>
           <CardHeader>
@@ -265,7 +294,28 @@ const BoreholeManagement = () => {
                         variant="outline"
                         onClick={() => setSelectedBorehole(borehole)}
                       >
-                        View Details
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setEditingBorehole(borehole);
+                          setShowEditForm(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleDeleteBorehole(borehole.id)}
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
                       </Button>
                       {borehole.status === 'Planning' && (
                         <Button 
@@ -335,7 +385,16 @@ const BoreholeManagement = () => {
               )}
               <div className="mt-6 flex gap-2">
                 <Button onClick={() => setSelectedBorehole(null)}>Close</Button>
-                <Button variant="outline">Edit Project</Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setEditingBorehole(selectedBorehole);
+                    setShowEditForm(true);
+                    setSelectedBorehole(null);
+                  }}
+                >
+                  Edit Project
+                </Button>
                 <Button variant="outline">Print Report</Button>
                 <Button variant="outline">Export Data</Button>
               </div>

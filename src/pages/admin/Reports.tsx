@@ -1,10 +1,13 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Trash2, Edit, Eye } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 import AddReportForm from '../../components/AddReportForm';
+import EditReportForm from '../../components/EditReportForm';
 
 interface Report {
   id: string;
@@ -16,6 +19,7 @@ interface Report {
   status: 'Generated' | 'Processing' | 'Failed';
   fileSize: string;
   downloadCount: number;
+  description?: string;
 }
 
 const Reports = () => {
@@ -23,6 +27,9 @@ const Reports = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReportType, setSelectedReportType] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [editingReport, setEditingReport] = useState<Report | null>(null);
   
   // Mock data - in real app, this would come from your Django backend
   const [reports, setReports] = useState<Report[]>([
@@ -111,6 +118,30 @@ const Reports = () => {
       title: "Report Generation Started",
       description: "Your report is being generated. You'll be notified when it's ready.",
     });
+  };
+
+  const handleEditReport = (reportData: any) => {
+    setReports(reports.map(report => 
+      report.id === reportData.id ? reportData : report
+    ));
+    setShowEditForm(false);
+    setEditingReport(null);
+    toast({
+      title: "Report Updated",
+      description: `${reportData.title} has been successfully updated.`,
+    });
+  };
+
+  const handleDeleteReport = (reportId: string) => {
+    const reportToDelete = reports.find(r => r.id === reportId);
+    if (window.confirm(`Are you sure you want to delete "${reportToDelete?.title}"? This action cannot be undone.`)) {
+      setReports(reports.filter(report => report.id !== reportId));
+      toast({
+        title: "Report Deleted",
+        description: `"${reportToDelete?.title}" has been removed from the system.`,
+        variant: "destructive"
+      });
+    }
   };
 
   const generateReport = (type: string, period: string) => {
@@ -209,6 +240,18 @@ const Reports = () => {
           <AddReportForm 
             onSubmit={handleAddReport}
             onCancel={() => setShowAddForm(false)}
+          />
+        )}
+
+        {/* Edit Report Form */}
+        {showEditForm && editingReport && (
+          <EditReportForm 
+            report={editingReport}
+            onSubmit={handleEditReport}
+            onCancel={() => {
+              setShowEditForm(false);
+              setEditingReport(null);
+            }}
           />
         )}
 
@@ -336,7 +379,35 @@ const Reports = () => {
                         <div><strong>Downloads:</strong> {report.downloadCount}</div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setSelectedReport(report)}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setEditingReport(report);
+                          setShowEditForm(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleDeleteReport(report.id)}
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
+                      </Button>
                       {report.status === 'Generated' && (
                         <>
                           <Button 
@@ -346,13 +417,6 @@ const Reports = () => {
                           >
                             Download PDF
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => downloadReport(report.id)}
-                          >
-                            Download Excel
-                          </Button>
                         </>
                       )}
                       {report.status === 'Processing' && (
@@ -360,9 +424,6 @@ const Reports = () => {
                           Processing...
                         </Button>
                       )}
-                      <Button size="sm" variant="outline">
-                        View Details
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -370,6 +431,58 @@ const Reports = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Report Details Modal */}
+        {selectedReport && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Report Details - {selectedReport.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div><strong>Title:</strong> {selectedReport.title}</div>
+                  <div><strong>Type:</strong> <span className={`px-2 py-1 rounded-full text-xs font-medium ${getReportTypeColor(selectedReport.type)}`}>{selectedReport.type.charAt(0).toUpperCase() + selectedReport.type.slice(1)}</span></div>
+                  <div><strong>Period:</strong> {selectedReport.period}</div>
+                  <div><strong>Status:</strong> <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedReport.status)}`}>{selectedReport.status}</span></div>
+                </div>
+                <div className="space-y-2">
+                  <div><strong>Generated Date:</strong> {selectedReport.generatedDate}</div>
+                  <div><strong>Generated By:</strong> {selectedReport.generatedBy}</div>
+                  <div><strong>File Size:</strong> {selectedReport.fileSize}</div>
+                  <div><strong>Download Count:</strong> {selectedReport.downloadCount}</div>
+                </div>
+              </div>
+              {selectedReport.description && (
+                <div className="mt-4">
+                  <strong>Description:</strong>
+                  <p className="mt-1 text-gray-600">{selectedReport.description}</p>
+                </div>
+              )}
+              <div className="mt-6 flex gap-2">
+                <Button onClick={() => setSelectedReport(null)}>Close</Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setEditingReport(selectedReport);
+                    setShowEditForm(true);
+                    setSelectedReport(null);
+                  }}
+                >
+                  Edit Report
+                </Button>
+                {selectedReport.status === 'Generated' && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => downloadReport(selectedReport.id)}
+                  >
+                    Download
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Analytics Summary */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

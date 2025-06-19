@@ -1,11 +1,14 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Trash2, Edit, Eye } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 import AddOrphanForm from '../../components/AddOrphanForm';
+import EditOrphanForm from '../../components/EditOrphanForm';
 
 interface Orphan {
   id: string;
@@ -26,7 +29,9 @@ const OrphanManagement = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
   const [selectedOrphan, setSelectedOrphan] = useState<Orphan | null>(null);
+  const [editingOrphan, setEditingOrphan] = useState<Orphan | null>(null);
   
   // Mock data - in real app, this would come from your Django backend
   const [orphans, setOrphans] = useState<Orphan[]>([
@@ -74,17 +79,6 @@ const OrphanManagement = () => {
     }
   ]);
 
-  const [newOrphan, setNewOrphan] = useState({
-    name: '',
-    age: '',
-    gender: 'Male' as 'Male' | 'Female',
-    location: '',
-    guardianName: '',
-    monthlyAllowance: '',
-    schoolStatus: '',
-    healthStatus: ''
-  });
-
   const filteredOrphans = orphans.filter(orphan =>
     orphan.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     orphan.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -98,6 +92,30 @@ const OrphanManagement = () => {
       title: "Orphan Added",
       description: `${orphanData.name} has been successfully registered.`,
     });
+  };
+
+  const handleEditOrphan = (orphanData: any) => {
+    setOrphans(orphans.map(orphan => 
+      orphan.id === orphanData.id ? orphanData : orphan
+    ));
+    setShowEditForm(false);
+    setEditingOrphan(null);
+    toast({
+      title: "Orphan Updated",
+      description: `${orphanData.name} has been successfully updated.`,
+    });
+  };
+
+  const handleDeleteOrphan = (orphanId: string) => {
+    const orphanToDelete = orphans.find(o => o.id === orphanId);
+    if (window.confirm(`Are you sure you want to delete ${orphanToDelete?.name}? This action cannot be undone.`)) {
+      setOrphans(orphans.filter(orphan => orphan.id !== orphanId));
+      toast({
+        title: "Orphan Deleted",
+        description: `${orphanToDelete?.name} has been removed from the system.`,
+        variant: "destructive"
+      });
+    }
   };
 
   const updateOrphanStatus = (id: string, status: 'Active' | 'Pending' | 'Inactive') => {
@@ -192,6 +210,18 @@ const OrphanManagement = () => {
           />
         )}
 
+        {/* Edit Orphan Form */}
+        {showEditForm && editingOrphan && (
+          <EditOrphanForm 
+            orphan={editingOrphan}
+            onSubmit={handleEditOrphan}
+            onCancel={() => {
+              setShowEditForm(false);
+              setEditingOrphan(null);
+            }}
+          />
+        )}
+
         {/* Orphan List */}
         <Card>
           <CardHeader>
@@ -220,13 +250,34 @@ const OrphanManagement = () => {
                         <div>Last Payment: {orphan.lastPayment}</div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Button 
                         size="sm" 
                         variant="outline"
                         onClick={() => setSelectedOrphan(orphan)}
                       >
-                        View Details
+                        <Eye className="w-4 h-4 mr-1" />
+                        View
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setEditingOrphan(orphan);
+                          setShowEditForm(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleDeleteOrphan(orphan.id)}
+                        className="text-red-600 hover:text-red-700 hover:border-red-300"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Delete
                       </Button>
                       {orphan.status === 'Pending' && (
                         <Button 
@@ -280,7 +331,16 @@ const OrphanManagement = () => {
               </div>
               <div className="mt-6 flex gap-2">
                 <Button onClick={() => setSelectedOrphan(null)}>Close</Button>
-                <Button variant="outline">Edit Details</Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setEditingOrphan(selectedOrphan);
+                    setShowEditForm(true);
+                    setSelectedOrphan(null);
+                  }}
+                >
+                  Edit Details
+                </Button>
                 <Button variant="outline">Print Record</Button>
               </div>
             </CardContent>
