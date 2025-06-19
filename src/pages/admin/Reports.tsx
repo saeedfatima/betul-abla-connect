@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '../../components/DashboardLayout';
+import AddReportForm from '../../components/AddReportForm';
 
 interface Report {
   id: string;
@@ -22,6 +22,7 @@ const Reports = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedReportType, setSelectedReportType] = useState('all');
+  const [showAddForm, setShowAddForm] = useState(false);
   
   // Mock data - in real app, this would come from your Django backend
   const [reports, setReports] = useState<Report[]>([
@@ -88,6 +89,29 @@ const Reports = () => {
     const matchesType = selectedReportType === 'all' || report.type === selectedReportType;
     return matchesSearch && matchesType;
   });
+
+  const handleAddReport = (reportData: any) => {
+    setReports([reportData, ...reports]);
+    setShowAddForm(false);
+    
+    // Simulate report generation
+    setTimeout(() => {
+      setReports(prev => prev.map(report => 
+        report.id === reportData.id 
+          ? { ...report, status: 'Generated' as const, fileSize: '1.5 MB' }
+          : report
+      ));
+      toast({
+        title: "Report Generated",
+        description: `${reportData.title} has been successfully generated.`,
+      });
+    }, 3000);
+
+    toast({
+      title: "Report Generation Started",
+      description: "Your report is being generated. You'll be notified when it's ready.",
+    });
+  };
 
   const generateReport = (type: string, period: string) => {
     const newReport: Report = {
@@ -167,10 +191,26 @@ const Reports = () => {
     <DashboardLayout title="Reports & Analytics" userRole="admin">
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Reports & Analytics</h2>
-          <p className="text-gray-600">Generate, view, and download reports for foundation activities</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Reports & Analytics</h2>
+            <p className="text-gray-600">Generate, view, and download reports for foundation activities</p>
+          </div>
+          <Button 
+            onClick={() => setShowAddForm(true)}
+            className="bg-ngo-primary-500 hover:bg-ngo-primary-600"
+          >
+            Generate Custom Report
+          </Button>
         </div>
+
+        {/* Add Report Form */}
+        {showAddForm && (
+          <AddReportForm 
+            onSubmit={handleAddReport}
+            onCancel={() => setShowAddForm(false)}
+          />
+        )}
 
         {/* Quick Generate Reports */}
         <Card>

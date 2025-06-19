@@ -1,12 +1,11 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '../../components/DashboardLayout';
+import AddBoreholeForm from '../../components/AddBoreholeForm';
 
 interface Borehole {
   id: string;
@@ -101,41 +100,12 @@ const BoreholeManagement = () => {
     borehole.community.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddBorehole = (e: React.FormEvent) => {
-    e.preventDefault();
-    const borehole: Borehole = {
-      id: Date.now().toString(),
-      projectCode: newBorehole.projectCode,
-      location: newBorehole.location,
-      community: newBorehole.community,
-      status: 'Planning',
-      depth: parseInt(newBorehole.depth) || 0,
-      waterQuality: 'Not Tested',
-      constructionDate: 'TBD',
-      lastMaintenance: 'N/A',
-      beneficiaries: parseInt(newBorehole.beneficiaries) || 0,
-      contractor: newBorehole.contractor || 'TBD',
-      cost: parseInt(newBorehole.cost) || 0,
-      coordinates: newBorehole.coordinates,
-      notes: newBorehole.notes
-    };
-
-    setBoreholes([...boreholes, borehole]);
-    setNewBorehole({
-      projectCode: '',
-      location: '',
-      community: '',
-      depth: '',
-      contractor: '',
-      cost: '',
-      beneficiaries: '',
-      coordinates: '',
-      notes: ''
-    });
+  const handleAddBorehole = (boreholeData: any) => {
+    setBoreholes([...boreholes, boreholeData]);
     setShowAddForm(false);
     toast({
       title: "Borehole Project Added",
-      description: `Project ${borehole.projectCode} has been successfully created.`,
+      description: `Project ${boreholeData.projectCode} has been successfully created.`,
     });
   };
 
@@ -243,6 +213,14 @@ const BoreholeManagement = () => {
           </Card>
         </div>
 
+        {/* Add Borehole Form */}
+        {showAddForm && (
+          <AddBoreholeForm 
+            onSubmit={handleAddBorehole}
+            onCancel={() => setShowAddForm(false)}
+          />
+        )}
+
         {/* Borehole List */}
         <Card>
           <CardHeader>
@@ -323,110 +301,6 @@ const BoreholeManagement = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Add Borehole Form */}
-        {showAddForm && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Add New Borehole Project</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAddBorehole} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Project Code *</label>
-                    <Input
-                      value={newBorehole.projectCode}
-                      onChange={(e) => setNewBorehole({...newBorehole, projectCode: e.target.value})}
-                      placeholder="e.g., BH-2024-004"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
-                    <Input
-                      value={newBorehole.location}
-                      onChange={(e) => setNewBorehole({...newBorehole, location: e.target.value})}
-                      placeholder="e.g., Kano State - Tudun Wada"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Community *</label>
-                    <Input
-                      value={newBorehole.community}
-                      onChange={(e) => setNewBorehole({...newBorehole, community: e.target.value})}
-                      placeholder="e.g., Tudun Wada Community"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Expected Depth (meters)</label>
-                    <Input
-                      type="number"
-                      value={newBorehole.depth}
-                      onChange={(e) => setNewBorehole({...newBorehole, depth: e.target.value})}
-                      placeholder="e.g., 45"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Contractor</label>
-                    <Input
-                      value={newBorehole.contractor}
-                      onChange={(e) => setNewBorehole({...newBorehole, contractor: e.target.value})}
-                      placeholder="e.g., Northern Drilling Co."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Budget (€) *</label>
-                    <Input
-                      type="number"
-                      value={newBorehole.cost}
-                      onChange={(e) => setNewBorehole({...newBorehole, cost: e.target.value})}
-                      placeholder="e.g., 3500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Expected Beneficiaries *</label>
-                    <Input
-                      type="number"
-                      value={newBorehole.beneficiaries}
-                      onChange={(e) => setNewBorehole({...newBorehole, beneficiaries: e.target.value})}
-                      placeholder="e.g., 350"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Coordinates</label>
-                    <Input
-                      value={newBorehole.coordinates}
-                      onChange={(e) => setNewBorehole({...newBorehole, coordinates: e.target.value})}
-                      placeholder="e.g., 11.9834°N, 8.5213°E"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Project Notes</label>
-                  <Textarea
-                    value={newBorehole.notes}
-                    onChange={(e) => setNewBorehole({...newBorehole, notes: e.target.value})}
-                    placeholder="Additional project details, site conditions, special requirements..."
-                    rows={3}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button type="submit" className="bg-ngo-primary-500 hover:bg-ngo-primary-600">
-                    Create Project
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Borehole Details Modal */}
         {selectedBorehole && (

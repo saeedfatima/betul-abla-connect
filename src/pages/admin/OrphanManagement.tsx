@@ -1,12 +1,11 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '../../components/DashboardLayout';
+import AddOrphanForm from '../../components/AddOrphanForm';
 
 interface Orphan {
   id: string;
@@ -92,38 +91,12 @@ const OrphanManagement = () => {
     orphan.guardianName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddOrphan = (e: React.FormEvent) => {
-    e.preventDefault();
-    const orphan: Orphan = {
-      id: Date.now().toString(),
-      name: newOrphan.name,
-      age: parseInt(newOrphan.age),
-      gender: newOrphan.gender,
-      location: newOrphan.location,
-      guardianName: newOrphan.guardianName,
-      monthlyAllowance: parseInt(newOrphan.monthlyAllowance),
-      status: 'Pending',
-      registrationDate: new Date().toISOString().split('T')[0],
-      lastPayment: 'N/A',
-      schoolStatus: newOrphan.schoolStatus,
-      healthStatus: newOrphan.healthStatus
-    };
-
-    setOrphans([...orphans, orphan]);
-    setNewOrphan({
-      name: '',
-      age: '',
-      gender: 'Male',
-      location: '',
-      guardianName: '',
-      monthlyAllowance: '',
-      schoolStatus: '',
-      healthStatus: ''
-    });
+  const handleAddOrphan = (orphanData: any) => {
+    setOrphans([...orphans, orphanData]);
     setShowAddForm(false);
     toast({
       title: "Orphan Added",
-      description: `${orphan.name} has been successfully registered.`,
+      description: `${orphanData.name} has been successfully registered.`,
     });
   };
 
@@ -211,6 +184,14 @@ const OrphanManagement = () => {
           </Card>
         </div>
 
+        {/* Add Orphan Form */}
+        {showAddForm && (
+          <AddOrphanForm 
+            onSubmit={handleAddOrphan}
+            onCancel={() => setShowAddForm(false)}
+          />
+        )}
+
         {/* Orphan List */}
         <Card>
           <CardHeader>
@@ -272,101 +253,6 @@ const OrphanManagement = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Add Orphan Form */}
-        {showAddForm && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Add New Orphan</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleAddOrphan} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                    <Input
-                      value={newOrphan.name}
-                      onChange={(e) => setNewOrphan({...newOrphan, name: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Age *</label>
-                    <Input
-                      type="number"
-                      value={newOrphan.age}
-                      onChange={(e) => setNewOrphan({...newOrphan, age: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
-                    <select 
-                      value={newOrphan.gender}
-                      onChange={(e) => setNewOrphan({...newOrphan, gender: e.target.value as 'Male' | 'Female'})}
-                      className="w-full p-2 border rounded-md"
-                      required
-                    >
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
-                    <Input
-                      value={newOrphan.location}
-                      onChange={(e) => setNewOrphan({...newOrphan, location: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Guardian Name *</label>
-                    <Input
-                      value={newOrphan.guardianName}
-                      onChange={(e) => setNewOrphan({...newOrphan, guardianName: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Allowance (€) *</label>
-                    <Input
-                      type="number"
-                      value={newOrphan.monthlyAllowance}
-                      onChange={(e) => setNewOrphan({...newOrphan, monthlyAllowance: e.target.value})}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">School Status</label>
-                    <Input
-                      value={newOrphan.schoolStatus}
-                      onChange={(e) => setNewOrphan({...newOrphan, schoolStatus: e.target.value})}
-                      placeholder="e.g., Enrolled - Primary 2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Health Status</label>
-                    <Input
-                      value={newOrphan.healthStatus}
-                      onChange={(e) => setNewOrphan({...newOrphan, healthStatus: e.target.value})}
-                      placeholder="e.g., Good, Needs medical attention"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button type="submit" className="bg-ngo-primary-500 hover:bg-ngo-primary-600">
-                    Add Orphan
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Orphan Details Modal */}
         {selectedOrphan && (
