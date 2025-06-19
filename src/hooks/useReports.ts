@@ -6,14 +6,14 @@ import { useToast } from './use-toast';
 interface Report {
   id: string;
   title: string;
-  type: 'orphan' | 'borehole' | 'financial' | 'activity' | 'summary';
-  generated_date: string;
-  generated_by: string;
-  period: string;
-  status: 'Generated' | 'Processing' | 'Failed';
-  file_size: string;
-  download_count: number;
-  description?: string;
+  type: 'Monthly' | 'Quarterly' | 'Annual' | 'Impact' | 'Financial' | 'Custom';
+  status: 'Draft' | 'Review' | 'Published' | 'Archived';
+  created_date: string;
+  published_date: string | null;
+  author: string;
+  description: string;
+  tags: string;
+  file_url: string | null;
 }
 
 export const useReports = () => {
@@ -46,7 +46,7 @@ export const useReports = () => {
     }
   };
 
-  const addReport = async (reportData: Omit<Report, 'id' | 'generated_date' | 'download_count'>) => {
+  const addReport = async (reportData: Omit<Report, 'id' | 'created_date'>) => {
     try {
       const response = await reportsAPI.create(reportData);
       
@@ -59,12 +59,12 @@ export const useReports = () => {
         });
         return true;
       } else {
-        throw new Error('Failed to create report');
+        throw new Error('Failed to add report');
       }
     } catch (err) {
       toast({
         title: "Error",
-        description: "Failed to create report. Please try again.",
+        description: "Failed to add report. Please try again.",
         variant: "destructive"
       });
       return false;
@@ -130,23 +130,15 @@ export const useReports = () => {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
+        a.style.display = 'none';
         a.href = url;
         a.download = `report-${id}.pdf`;
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        
-        // Update download count
-        setReports(prev => prev.map(report => 
-          report.id === id 
-            ? { ...report, download_count: report.download_count + 1 }
-            : report
-        ));
-        
         toast({
           title: "Success",
-          description: "Report download started successfully."
+          description: "Report downloaded successfully."
         });
         return true;
       } else {

@@ -4,136 +4,50 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
 import { Trash2, Edit, Eye } from 'lucide-react';
 import DashboardLayout from '../../components/DashboardLayout';
 import AddBoreholeForm from '../../components/AddBoreholeForm';
 import EditBoreholeForm from '../../components/EditBoreholeForm';
-
-interface Borehole {
-  id: string;
-  projectCode: string;
-  location: string;
-  community: string;
-  status: 'Planning' | 'In Progress' | 'Completed' | 'Maintenance' | 'Inactive';
-  depth: number;
-  waterQuality: 'Excellent' | 'Good' | 'Fair' | 'Poor' | 'Not Tested';
-  constructionDate: string;
-  lastMaintenance: string;
-  beneficiaries: number;
-  contractor: string;
-  cost: number;
-  coordinates: string;
-  notes: string;
-}
+import { useBoreholes } from '../../hooks/useBoreholes';
 
 const BoreholeManagement = () => {
-  const { toast } = useToast();
+  const { boreholes, loading, addBorehole, updateBorehole, deleteBorehole } = useBoreholes();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
-  const [selectedBorehole, setSelectedBorehole] = useState<Borehole | null>(null);
-  const [editingBorehole, setEditingBorehole] = useState<Borehole | null>(null);
-  
-  // Mock data - in real app, this would come from your Django backend
-  const [boreholes, setBoreholes] = useState<Borehole[]>([
-    {
-      id: '1',
-      projectCode: 'BH-2024-001',
-      location: 'Kano State - Ungwar Rimi',
-      community: 'Ungwar Rimi Community',
-      status: 'Completed',
-      depth: 45,
-      waterQuality: 'Good',
-      constructionDate: '2024-03-15',
-      lastMaintenance: '2024-10-01',
-      beneficiaries: 350,
-      contractor: 'Northern Drilling Co.',
-      cost: 3500,
-      coordinates: '11.9834°N, 8.5213°E',
-      notes: 'Solar pump installed. Community trained on maintenance.'
-    },
-    {
-      id: '2',
-      projectCode: 'BH-2024-002',
-      location: 'Jigawa State - Kafin Hausa',
-      community: 'Kafin Hausa Village',
-      status: 'In Progress',
-      depth: 38,
-      waterQuality: 'Not Tested',
-      constructionDate: '2024-11-01',
-      lastMaintenance: 'N/A',
-      beneficiaries: 280,
-      contractor: 'Reliable Water Solutions',
-      cost: 3200,
-      coordinates: '12.4567°N, 9.1234°E',
-      notes: 'Construction 80% complete. Pump installation pending.'
-    },
-    {
-      id: '3',
-      projectCode: 'BH-2024-003',
-      location: 'Kano State - Dorayi',
-      community: 'Dorayi Community',
-      status: 'Planning',
-      depth: 0,
-      waterQuality: 'Not Tested',
-      constructionDate: 'TBD',
-      lastMaintenance: 'N/A',
-      beneficiaries: 420,
-      contractor: 'TBD',
-      cost: 3800,
-      coordinates: '11.8901°N, 8.4567°E',
-      notes: 'Site survey completed. Awaiting contractor selection.'
-    }
-  ]);
+  const [selectedBorehole, setSelectedBorehole] = useState<any>(null);
+  const [editingBorehole, setEditingBorehole] = useState<any>(null);
 
   const filteredBoreholes = boreholes.filter(borehole =>
-    borehole.projectCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    borehole.project_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
     borehole.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
     borehole.community.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddBorehole = (boreholeData: any) => {
-    setBoreholes([...boreholes, boreholeData]);
-    setShowAddForm(false);
-    toast({
-      title: "Borehole Project Added",
-      description: `Project ${boreholeData.projectCode} has been successfully created.`,
-    });
-  };
-
-  const handleEditBorehole = (boreholeData: any) => {
-    setBoreholes(boreholes.map(borehole => 
-      borehole.id === boreholeData.id ? boreholeData : borehole
-    ));
-    setShowEditForm(false);
-    setEditingBorehole(null);
-    toast({
-      title: "Borehole Updated",
-      description: `Project ${boreholeData.projectCode} has been successfully updated.`,
-    });
-  };
-
-  const handleDeleteBorehole = (boreholeId: string) => {
-    const boreholeToDelete = boreholes.find(b => b.id === boreholeId);
-    if (window.confirm(`Are you sure you want to delete project ${boreholeToDelete?.projectCode}? This action cannot be undone.`)) {
-      setBoreholes(boreholes.filter(borehole => borehole.id !== boreholeId));
-      toast({
-        title: "Borehole Deleted",
-        description: `Project ${boreholeToDelete?.projectCode} has been removed from the system.`,
-        variant: "destructive"
-      });
+  const handleAddBorehole = async (boreholeData: any) => {
+    const success = await addBorehole(boreholeData);
+    if (success) {
+      setShowAddForm(false);
     }
   };
 
-  const updateBoreholeStatus = (id: string, status: Borehole['status']) => {
-    setBoreholes(boreholes.map(borehole =>
-      borehole.id === id ? { ...borehole, status } : borehole
-    ));
-    toast({
-      title: "Status Updated",
-      description: "Borehole status has been updated successfully.",
-    });
+  const handleEditBorehole = async (boreholeData: any) => {
+    const success = await updateBorehole(boreholeData.id, boreholeData);
+    if (success) {
+      setShowEditForm(false);
+      setEditingBorehole(null);
+    }
+  };
+
+  const handleDeleteBorehole = async (boreholeId: string) => {
+    const boreholeToDelete = boreholes.find(b => b.id === boreholeId);
+    if (window.confirm(`Are you sure you want to delete project ${boreholeToDelete?.project_code}? This action cannot be undone.`)) {
+      await deleteBorehole(boreholeId);
+    }
+  };
+
+  const updateBoreholeStatus = async (id: string, status: 'Planning' | 'In Progress' | 'Completed' | 'Maintenance' | 'Inactive') => {
+    await updateBorehole(id, { status });
   };
 
   const getStatusColor = (status: string) => {
@@ -156,6 +70,16 @@ const BoreholeManagement = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Borehole Management" userRole="admin">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-ngo-primary-500"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout title="Borehole Management" userRole="admin">
@@ -262,13 +186,13 @@ const BoreholeManagement = () => {
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">{borehole.projectCode}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">{borehole.project_code}</h3>
                         <Badge className={getStatusColor(borehole.status)}>
                           {borehole.status}
                         </Badge>
-                        {borehole.waterQuality !== 'Not Tested' && (
-                          <Badge className={getWaterQualityColor(borehole.waterQuality)}>
-                            {borehole.waterQuality} Water
+                        {borehole.water_quality !== 'Not Tested' && (
+                          <Badge className={getWaterQualityColor(borehole.water_quality)}>
+                            {borehole.water_quality} Water
                           </Badge>
                         )}
                       </div>
@@ -279,8 +203,8 @@ const BoreholeManagement = () => {
                         <div><strong>Beneficiaries:</strong> {borehole.beneficiaries.toLocaleString()}</div>
                         <div><strong>Contractor:</strong> {borehole.contractor}</div>
                         <div><strong>Cost:</strong> €{borehole.cost.toLocaleString()}</div>
-                        <div><strong>Construction:</strong> {borehole.constructionDate}</div>
-                        <div><strong>Last Maintenance:</strong> {borehole.lastMaintenance}</div>
+                        <div><strong>Construction:</strong> {borehole.construction_date || 'TBD'}</div>
+                        <div><strong>Last Maintenance:</strong> {borehole.last_maintenance || 'N/A'}</div>
                       </div>
                       {borehole.notes && (
                         <div className="mt-2 text-sm text-gray-600">
@@ -356,21 +280,21 @@ const BoreholeManagement = () => {
         {selectedBorehole && (
           <Card>
             <CardHeader>
-              <CardTitle>Project Details - {selectedBorehole.projectCode}</CardTitle>
+              <CardTitle>Project Details - {selectedBorehole.project_code}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <div><strong>Project Code:</strong> {selectedBorehole.projectCode}</div>
+                  <div><strong>Project Code:</strong> {selectedBorehole.project_code}</div>
                   <div><strong>Location:</strong> {selectedBorehole.location}</div>
                   <div><strong>Community:</strong> {selectedBorehole.community}</div>
                   <div><strong>Status:</strong> <Badge className={getStatusColor(selectedBorehole.status)}>{selectedBorehole.status}</Badge></div>
                   <div><strong>Depth:</strong> {selectedBorehole.depth > 0 ? `${selectedBorehole.depth}m` : 'TBD'}</div>
-                  <div><strong>Water Quality:</strong> <Badge className={getWaterQualityColor(selectedBorehole.waterQuality)}>{selectedBorehole.waterQuality}</Badge></div>
+                  <div><strong>Water Quality:</strong> <Badge className={getWaterQualityColor(selectedBorehole.water_quality)}>{selectedBorehole.water_quality}</Badge></div>
                 </div>
                 <div className="space-y-2">
-                  <div><strong>Construction Date:</strong> {selectedBorehole.constructionDate}</div>
-                  <div><strong>Last Maintenance:</strong> {selectedBorehole.lastMaintenance}</div>
+                  <div><strong>Construction Date:</strong> {selectedBorehole.construction_date || 'TBD'}</div>
+                  <div><strong>Last Maintenance:</strong> {selectedBorehole.last_maintenance || 'N/A'}</div>
                   <div><strong>Beneficiaries:</strong> {selectedBorehole.beneficiaries.toLocaleString()}</div>
                   <div><strong>Contractor:</strong> {selectedBorehole.contractor}</div>
                   <div><strong>Cost:</strong> €{selectedBorehole.cost.toLocaleString()}</div>
