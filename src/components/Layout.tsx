@@ -1,10 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Menu, X } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = [
     { path: '/', label: 'Home' },
@@ -13,13 +15,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { path: '/contact', label: 'Contact' },
   ];
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Header */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-50">
         <nav className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to="/" className="flex items-center space-x-2" onClick={closeMobileMenu}>
               <div className="w-10 h-10 bg-ngo-primary-500 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-lg">BA</span>
               </div>
@@ -29,6 +39,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </div>
             </Link>
 
+            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
               {navLinks.map((link) => (
                 <Link
@@ -47,12 +58,46 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
 
             {/* Mobile menu button */}
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center space-x-2">
               <Button variant="outline" size="sm" asChild>
-                <Link to="/login">Login</Link>
+                <Link to="/login" onClick={closeMobileMenu}>Login</Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleMobileMenu}
+                className="p-2"
+                aria-label="Toggle menu"
+              >
+                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </Button>
             </div>
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden mt-4 pb-4 border-t pt-4">
+              <div className="flex flex-col space-y-3">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`text-gray-700 hover:text-ngo-primary-600 transition-colors py-2 px-3 rounded-md ${
+                      location.pathname === link.path ? 'text-ngo-primary-600 font-semibold bg-ngo-primary-50' : ''
+                    }`}
+                    onClick={closeMobileMenu}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+                <div className="pt-2 border-t">
+                  <Button asChild className="w-full bg-ngo-primary-500 hover:bg-ngo-primary-600">
+                    <Link to="/login" onClick={closeMobileMenu}>Staff Login</Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </nav>
       </header>
 
