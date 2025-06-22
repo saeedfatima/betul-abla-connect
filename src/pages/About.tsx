@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Layout from '../components/Layout';
@@ -6,22 +5,22 @@ import Layout from '../components/Layout';
 const About = () => {
   const teamMembers = [
     {
-      name: "Dr. Amina Hassan",
-      position: "Executive Director",
-      description: "Leading humanitarian efforts with over 15 years of experience in NGO management.",
+      name: "Fatma Betul Korkmaz",
+      position: "Head of the Foundation",
+      description: "Leading the foundation's humanitarian mission with dedication to transforming communities in Northern Nigeria.",
       location: "Brussels, Belgium"
     },
     {
-      name: "Ibrahim Mohammed",
-      position: "Field Coordinator",
-      description: "Overseeing on-ground operations in Northern Nigeria with local community expertise.",
-      location: "Kano, Nigeria"
+      name: "Aminu Usman Abdullahi",
+      position: "Nigerian Coordinator",
+      description: "Coordinating all field operations and community programs across Northern Nigeria with extensive local expertise.",
+      location: "Nigeria"
     },
     {
-      name: "Fatima Usman",
-      position: "Programs Manager",
-      description: "Managing orphan care and feeding programs with a focus on sustainable impact.",
-      location: "Jigawa, Nigeria"
+      name: "Naziru Sani",
+      position: "IT Officer",
+      description: "Managing technology infrastructure and digital systems to support the foundation's operations and data management.",
+      location: "Nigeria"
     }
   ];
 
