@@ -44,7 +44,7 @@ const Contact = () => {
     {
       icon: "📞",
       title: "Phone",
-      details: ["+32 xxx xxx xxx", "+234 xxx xxx xxxx"],
+      details: ["+234 8060917975", "+234 90600040001"],
       description: "Call during business hours"
     },
     {
