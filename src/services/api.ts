@@ -4,18 +4,36 @@ const API_BASE_URL = 'http://localhost:8000/api';
 // Token management
 export const getAuthToken = () => localStorage.getItem('access_token');
 export const getRefreshToken = () => localStorage.getItem('refresh_token');
+
 export const setTokens = (accessToken: string, refreshToken: string) => {
   localStorage.setItem('access_token', accessToken);
   localStorage.setItem('refresh_token', refreshToken);
 };
+
 export const clearTokens = () => {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('betul_abla_user');
 };
 
-// Base API request function
-const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
+// Token refresh utility
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (error: any) => void }> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(token!);
+    }
+  });
+  
+  failedQueue = [];
+};
+
+// Base API request function with automatic token refresh
+const apiRequest = async (endpoint: string, options: RequestInit = {}): Promise<Response> => {
   const token = getAuthToken();
   
   const config: RequestInit = {
@@ -27,33 +45,69 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     ...options,
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  let response = await fetch(`${API_BASE_URL}${endpoint}`, config);
   
-  if (response.status === 401) {
-    // Token expired, try to refresh
+  // Handle token expiration
+  if (response.status === 401 && token) {
     const refreshToken = getRefreshToken();
+    
     if (refreshToken) {
-      const refreshResponse = await fetch(`${API_BASE_URL}/token/refresh/`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh: refreshToken }),
-      });
-      
-      if (refreshResponse.ok) {
-        const { access } = await refreshResponse.json();
-        localStorage.setItem('access_token', access);
-        
-        // Retry original request
-        config.headers = {
-          ...config.headers,
-          Authorization: `Bearer ${access}`,
-        };
-        return fetch(`${API_BASE_URL}${endpoint}`, config);
-      } else {
+      if (isRefreshing) {
+        // If already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(() => {
+          // Retry with new token
+          const newToken = getAuthToken();
+          const newConfig = {
+            ...config,
+            headers: {
+              ...config.headers,
+              Authorization: `Bearer ${newToken}`,
+            },
+          };
+          return fetch(`${API_BASE_URL}${endpoint}`, newConfig);
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const refreshResponse = await fetch(`${API_BASE_URL}/token/refresh/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh: refreshToken }),
+        });
+
+        if (refreshResponse.ok) {
+          const { access } = await refreshResponse.json();
+          setTokens(access, refreshToken);
+          processQueue(null, access);
+
+          // Retry original request with new token
+          const newConfig = {
+            ...config,
+            headers: {
+              ...config.headers,
+              Authorization: `Bearer ${access}`,
+            },
+          };
+          response = await fetch(`${API_BASE_URL}${endpoint}`, newConfig);
+        } else {
+          processQueue(new Error('Token refresh failed'), null);
+          clearTokens();
+          window.location.href = '/login';
+        }
+      } catch (error) {
+        processQueue(error, null);
         clearTokens();
         window.location.href = '/login';
-        return response;
+      } finally {
+        isRefreshing = false;
       }
+    } else {
+      clearTokens();
+      window.location.href = '/login';
     }
   }
   
@@ -71,16 +125,57 @@ export const authAPI = {
     return response;
   },
   
+  refreshToken: async () => {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+    return response;
+  },
+  
   getProfile: async () => {
     const response = await apiRequest('/auth/profile/');
+    return response;
+  },
+
+  changePassword: async (oldPassword: string, newPassword: string) => {
+    const response = await apiRequest('/auth/change-password/', {
+      method: 'POST',
+      body: JSON.stringify({
+        old_password: oldPassword,
+        new_password: newPassword,
+        confirm_password: newPassword,
+      }),
+    });
+    return response;
+  },
+
+  updateProfile: async (profileData: any) => {
+    const response = await apiRequest('/auth/profile/', {
+      method: 'PUT',
+      body: JSON.stringify(profileData),
+    });
     return response;
   },
 };
 
 // Orphans API
 export const orphansAPI = {
-  getAll: async () => {
-    const response = await apiRequest('/orphans/');
+  getAll: async (params?: Record<string, any>) => {
+    const queryString = params ? new URLSearchParams(params).toString() : '';
+    const endpoint = `/orphans/${queryString ? `?${queryString}` : ''}`;
+    const response = await apiRequest(endpoint);
+    return response;
+  },
+  
+  getById: async (id: string) => {
+    const response = await apiRequest(`/orphans/${id}/`);
     return response;
   },
   
@@ -110,8 +205,15 @@ export const orphansAPI = {
 
 // Boreholes API
 export const boreholesAPI = {
-  getAll: async () => {
-    const response = await apiRequest('/boreholes/');
+  getAll: async (params?: Record<string, any>) => {
+    const queryString = params ? new URLSearchParams(params).toString() : '';
+    const endpoint = `/boreholes/${queryString ? `?${queryString}` : ''}`;
+    const response = await apiRequest(endpoint);
+    return response;
+  },
+  
+  getById: async (id: string) => {
+    const response = await apiRequest(`/boreholes/${id}/`);
     return response;
   },
   
@@ -141,8 +243,10 @@ export const boreholesAPI = {
 
 // Reports API
 export const reportsAPI = {
-  getAll: async () => {
-    const response = await apiRequest('/reports/');
+  getAll: async (params?: Record<string, any>) => {
+    const queryString = params ? new URLSearchParams(params).toString() : '';
+    const endpoint = `/reports/${queryString ? `?${queryString}` : ''}`;
+    const response = await apiRequest(endpoint);
     return response;
   },
   
