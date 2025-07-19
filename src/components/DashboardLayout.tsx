@@ -12,17 +12,13 @@ interface DashboardLayoutProps {
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, userRole }) => {
-  const { user, logout } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
 
-  const handleLogout = () => {
-    logout();
-    toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
-    });
+  const handleLogout = async () => {
+    await signOut();
     navigate('/login');
   };
 
@@ -76,9 +72,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title, user
           
           <div className="flex items-center space-x-4">
             <div className="text-sm text-gray-600">
-              Welcome, <span className="font-semibold">{user?.fullName}</span>
+              Welcome, <span className="font-semibold">{profile?.full_name || user?.email}</span>
               <span className="ml-2 px-2 py-1 bg-ngo-primary-100 text-ngo-primary-700 rounded-full text-xs capitalize">
-                {user?.role}
+                {profile?.role || 'staff'}
               </span>
             </div>
             <Button variant="outline" size="sm" onClick={handleLogout}>

@@ -14,7 +14,207 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      boreholes: {
+        Row: {
+          beneficiaries_count: number | null
+          community_served: string | null
+          created_at: string | null
+          created_by: string | null
+          depth_meters: number | null
+          id: string
+          installation_date: string | null
+          last_maintenance: string | null
+          latitude: number | null
+          location: string
+          longitude: number | null
+          name: string
+          status: string | null
+          updated_at: string | null
+          water_quality: string | null
+        }
+        Insert: {
+          beneficiaries_count?: number | null
+          community_served?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          depth_meters?: number | null
+          id?: string
+          installation_date?: string | null
+          last_maintenance?: string | null
+          latitude?: number | null
+          location: string
+          longitude?: number | null
+          name: string
+          status?: string | null
+          updated_at?: string | null
+          water_quality?: string | null
+        }
+        Update: {
+          beneficiaries_count?: number | null
+          community_served?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          depth_meters?: number | null
+          id?: string
+          installation_date?: string | null
+          last_maintenance?: string | null
+          latitude?: number | null
+          location?: string
+          longitude?: number | null
+          name?: string
+          status?: string | null
+          updated_at?: string | null
+          water_quality?: string | null
+        }
+        Relationships: []
+      }
+      orphans: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          created_by: string | null
+          date_of_birth: string | null
+          education_level: string | null
+          full_name: string
+          gender: string | null
+          guardian_name: string | null
+          guardian_phone: string | null
+          health_status: string | null
+          id: string
+          photo_url: string | null
+          school_name: string | null
+          special_needs: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_of_birth?: string | null
+          education_level?: string | null
+          full_name: string
+          gender?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          health_status?: string | null
+          id?: string
+          photo_url?: string | null
+          school_name?: string | null
+          special_needs?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_of_birth?: string | null
+          education_level?: string | null
+          full_name?: string
+          gender?: string | null
+          guardian_name?: string | null
+          guardian_phone?: string | null
+          health_status?: string | null
+          id?: string
+          photo_url?: string | null
+          school_name?: string | null
+          special_needs?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          is_active: boolean | null
+          location: string | null
+          phone: string | null
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          is_active?: boolean | null
+          location?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          borehole_id: string | null
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          file_url: string | null
+          id: string
+          orphan_id: string | null
+          report_type: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          borehole_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          file_url?: string | null
+          id?: string
+          orphan_id?: string | null
+          report_type?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          borehole_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          file_url?: string | null
+          id?: string
+          orphan_id?: string | null
+          report_type?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_borehole_id_fkey"
+            columns: ["borehole_id"]
+            isOneToOne: false
+            referencedRelation: "boreholes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_orphan_id_fkey"
+            columns: ["orphan_id"]
+            isOneToOne: false
+            referencedRelation: "orphans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

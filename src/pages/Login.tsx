@@ -10,11 +10,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const Login = () => {
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { user, login, isLoading: authLoading } = useAuth();
+  const { user, profile, signIn, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
   // Clear error when user starts typing
@@ -22,7 +22,7 @@ const Login = () => {
     if (error) {
       setError('');
     }
-  }, [credentials.username, credentials.password]);
+  }, [credentials.email, credentials.password]);
 
   if (authLoading) {
     return (
@@ -37,7 +37,8 @@ const Login = () => {
 
   if (user) {
     // Redirect based on user role
-    switch (user.role) {
+    const userRole = profile?.role || 'staff';
+    switch (userRole) {
       case 'admin':
         return <Navigate to="/admin" replace />;
       case 'coordinator':
@@ -53,8 +54,8 @@ const Login = () => {
     e.preventDefault();
     
     // Basic validation
-    if (!credentials.username.trim() || !credentials.password.trim()) {
-      setError('Please enter both username and password');
+    if (!credentials.email.trim() || !credentials.password.trim()) {
+      setError('Please enter both email and password');
       return;
     }
 
@@ -62,18 +63,18 @@ const Login = () => {
     setError('');
     
     try {
-      const result = await login(credentials.username.trim(), credentials.password);
+      const result = await signIn(credentials.email.trim(), credentials.password);
       
-      if (result.success) {
+      if (!result.error) {
         toast({
           title: "Login Successful",
           description: "Welcome to the Betul Abla Foundation dashboard!",
         });
       } else {
-        setError(result.message || 'Login failed. Please try again.');
+        setError(result.error.message || 'Login failed. Please try again.');
         toast({
           title: "Login Failed", 
-          description: result.message || "Invalid username or password. Please try again.",
+          description: result.error.message || "Invalid email or password. Please try again.",
           variant: "destructive",
         });
       }
@@ -134,18 +135,18 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Username
+                  Email
                 </label>
                 <Input
-                  type="text"
-                  name="username"
-                  value={credentials.username}
+                  type="email"
+                  name="email"
+                  value={credentials.email}
                   onChange={handleChange}
                   required
-                  placeholder="Enter your username"
+                  placeholder="Enter your email"
                   disabled={isLoading}
                   className="transition-colors focus:ring-2 focus:ring-ngo-primary-500"
-                  autoComplete="username"
+                  autoComplete="email"
                 />
               </div>
               
@@ -196,13 +197,11 @@ const Login = () => {
               </Button>
             </form>
 
-            {/* Demo Credentials */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">Demo Credentials:</h3>
-              <div className="text-xs text-gray-600 space-y-1">
-                <p><strong>Admin:</strong> username: admin, password: password123</p>
-                <p><strong>Coordinator:</strong> username: coordinator, password: password123</p>
-                <p><strong>Staff:</strong> username: staff, password: password123</p>
+            {/* Demo Notice */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <h3 className="text-sm font-semibold text-blue-700 mb-2">New Authentication System</h3>
+              <div className="text-xs text-blue-600">
+                <p>This app now uses Supabase authentication. Please sign up to create an account or use existing Supabase credentials.</p>
               </div>
             </div>
           </CardContent>

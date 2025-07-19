@@ -15,11 +15,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles, 
   fallbackPath = '/login' 
 }) => {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, profile, loading, isAuthenticated } = useAuth();
   const location = useLocation();
 
   // Show loading spinner while checking authentication
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -36,10 +36,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Check if user's role is allowed
-  if (!allowedRoles.includes(user.role)) {
+  const userRole = profile?.role || 'staff';
+  if (!allowedRoles.includes(userRole)) {
     // Redirect based on user role
     let redirectPath = '/';
-    switch (user.role) {
+    switch (userRole) {
       case 'admin':
         redirectPath = '/admin';
         break;
@@ -54,7 +55,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Check if user account is active
-  if (!user.isActive) {
+  if (profile && !profile.is_active) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center max-w-md mx-auto p-6">
